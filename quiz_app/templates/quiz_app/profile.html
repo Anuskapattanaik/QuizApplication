@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - Modern Bootstrap Quiz</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding-bottom: 2rem;
+        }
+
+        .navbar {
+            background-color: #667eea !important;
+        }
+
+        /* Profile Header Styles */
+        .profile-header-container {
+            max-width: 935px;
+            margin: 0 auto;
+            padding: 2rem 1rem 0;
+            border-bottom: 1px solid #dbdbdb;
+        }
+
+        .profile-img-container {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto;
+            border: 1px solid #dbdbdb;
+            background-color: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .profile-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-username {
+            font-size: 1.75rem;
+            font-weight: 300;
+            margin-right: 1.25rem;
+        }
+
+        .stat-number {
+            font-weight: 600;
+        }
+
+        .profile-bio-name {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .profile-bio-text {
+            white-space: pre-line;
+        }
+
+        /* Grid Styles */
+        .grid-container {
+            max-width: 935px;
+            margin: 0 auto;
+            padding-top: 3rem;
+        }
+
+        .grid-item {
+            aspect-ratio: 1 / 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin-bottom: 1.5rem;
+            position: relative;
+            cursor: pointer;
+            border-radius: 8px;
+            /* Slightly softer than straight corners */
+            overflow: hidden;
+        }
+
+        .grid-item-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: background-color 0.2s;
+        }
+
+        .grid-item-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+            color: white;
+        }
+
+        .grid-item:hover .grid-item-overlay {
+            opacity: 1;
+        }
+
+        .grid-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Modal Customization */
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #dbdbdb;
+            padding: 1rem 1.5rem;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    {% include 'quiz_app/navbar.html' %}
+
+    <!-- Profile Header Section -->
+    <div class="profile-header-container mb-4">
+        <div class="row mb-4 align-items-center">
+
+            <!-- Avatar Column -->
+            <div class="col-12 col-md-4 mb-4 mb-md-0 text-center">
+                <div class="profile-img-container">
+                    {% if request.user.profile.profile_picture %}
+                    <img src="{{ request.user.profile.profile_picture.url }}" alt="Profile Picture" class="profile-img">
+                    {% else %}
+                    <i class="bi bi-person text-secondary" style="font-size: 5rem;"></i>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Info Column -->
+            <div class="col-12 col-md-8">
+                <!-- Top Row: Username & Edit Button -->
+                <div class="d-flex flex-column flex-md-row align-items-md-center mb-3">
+                    <h2 class="profile-username mb-3 mb-md-0">{{ request.user.username }}</h2>
+                    <button type="button" class="btn btn-light border fw-bold px-3 py-1 btn-sm" data-bs-toggle="modal"
+                        data-bs-target="#editProfileModal">
+                        Edit Profile
+                    </button>
+                    <!-- Settings icon placeholder for aesthetic -->
+                    <button class="btn btn-link text-body ms-2 d-none d-md-inline">
+                        <i class="bi bi-gear-wide" style="font-size: 1.5rem;"></i>
+                    </button>
+                </div>
+
+                <!-- Middle Row: Stats -->
+                <div class="d-flex mb-3">
+                    <div class="me-4 text-center text-md-start">
+                        <span class="stat-number">{{ total_quizzes }}</span> <span class="stat-label">quizzes</span>
+                    </div>
+                    <div class="me-4 text-center text-md-start">
+                        <span class="stat-number">{{ stats_by_category|length }}</span> <span
+                            class="stat-label">categories</span>
+                    </div>
+                    <div class="text-center text-md-start">
+                        <span class="stat-number">{{ highest_score.score|default:"0" }}</span> <span
+                            class="stat-label">best score</span>
+                    </div>
+                </div>
+
+                <!-- Bottom Row: Bio & Details -->
+                <div class="profile-bio-section">
+                    <div class="profile-bio-name">{{ request.user.first_name }} {{ request.user.last_name }}</div>
+
+                    {% if request.user.profile.age or request.user.profile.gender %}
+                    <div class="text-muted small mb-1">
+                        {% if request.user.profile.age %}{{ request.user.profile.age }} yrs old{% endif %}
+                        {% if request.user.profile.age and request.user.profile.gender %} • {% endif %}
+                        {% if request.user.profile.gender %}{{ request.user.profile.get_gender_display }}{% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% if request.user.profile.bio %}
+                    <div class="profile-bio-text fw-bold mb-1">{{ request.user.profile.bio }}</div>
+                    {% endif %}
+
+                    {% if request.user.profile.about %}
+                    <div class="profile-bio-text">{{ request.user.profile.about }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid Section (Category Performance) -->
+    <div class="grid-container container">
+
+        <!-- Grid Tabs (Aesthetic only) -->
+        <div class="d-flex justify-content-center border-top pt-3 mb-4"
+            style="margin-top: -3rem; border-color: #dbdbdb !important;">
+            <div class="mx-3 text-uppercase fw-bold text-body d-flex align-items-center"
+                style="font-size: 0.8rem; letter-spacing: 1px; border-top: 1px solid currentColor; padding-top: 1rem; margin-top: -1px;">
+                <i class="bi bi-grid-3x3 me-2 fs-6"></i> CATEGORIES
+            </div>
+            <div class="mx-3 text-uppercase fw-bold text-muted d-flex align-items-center"
+                style="font-size: 0.8rem; letter-spacing: 1px; padding-top: 1rem;">
+                <i class="bi bi-bookmark me-2 fs-6"></i> SAVED
+            </div>
+        </div>
+
+        <div class="row row-cols-3 g-1 g-md-4">
+            {% if stats_by_category %}
+            {% for category, stats in stats_by_category.items %}
+            <div class="col">
+                <!-- Link entire square to that category quiz -->
+                <a href="{% url 'index' category %}" class="grid-item d-block text-decoration-none">
+                    <div class="grid-item-content">
+                        <!-- Display icon based on category -->
+                        {% if category == 'Maths' %}<i class="bi bi-calculator grid-icon"></i>
+                        {% elif category == 'Physics' %}<i class="bi bi-magnet grid-icon"></i>
+                        {% elif category == 'Chemistry' %}<i class="bi bi-flask grid-icon"></i>
+                        {% elif category == 'Biology' %}<i class="bi bi-heart-pulse grid-icon"></i>
+                        {% elif category == 'Geography' %}<i class="bi bi-globe-americas grid-icon"></i>
+                        {% elif category == 'Aptitude' %}<i class="bi bi-puzzle grid-icon"></i>
+                        {% elif category == 'Personality' %}<i class="bi bi-person-lines-fill grid-icon"></i>
+                        {% elif category == 'Current Affairs' %}<i class="bi bi-newspaper grid-icon"></i>
+                        {% elif category == 'Computer Science' %}<i class="bi bi-laptop grid-icon"></i>
+                        {% elif category == 'Space' %}<i class="bi bi-rocket-takeoff grid-icon"></i>
+                        {% else %}<i class="bi bi-question-circle grid-icon"></i>{% endif %}
+
+                        <h6 class="fw-bold mb-0 d-none d-md-block">{{ category }}</h6>
+                    </div>
+
+                    <!-- Hover State -->
+                    <div class="grid-item-overlay">
+                        <ul class="list-unstyled text-center mb-0">
+                            <li class="mb-2"><i class="bi bi-controller me-2"></i><b>{{ stats.count }}</b> Plays</li>
+                            <li><i class="bi bi-trophy-fill me-2"></i><b>{{ stats.max }}</b> Best</li>
+                        </ul>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="col-12 text-center py-5">
+                <div class="mb-3">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle border border-primary"
+                        style="width: 80px; height: 80px;">
+                        <i class="bi bi-camera fs-1" style="transform: rotate(-10deg);"></i>
+                    </div>
+                </div>
+                <h2 class="h4 fw-bold">No Quizzes Taken</h2>
+                <p class="text-muted">Start playing to populate your grid.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold mx-auto" id="editProfileModalLabel">Edit Profile</h5>
+                    <button type="button" class="btn-close m-0 position-absolute end-0 me-3" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row g-3">
+
+                            {% if user_form.errors or profile_form.errors %}
+                            <div class="col-12 mb-2">
+                                <div class="alert alert-danger py-2 mb-0 small">
+                                    Please check the fields below for errors. Some values (like username) may already be
+                                    taken.
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Profile Picture Upload centered -->
+                            <div class="col-12 text-center mb-3">
+                                <div class="profile-img-container shadow-sm mx-auto mb-3"
+                                    style="width: 100px; height: 100px;">
+                                    {% if request.user.profile.profile_picture %}
+                                    <img src="{{ request.user.profile.profile_picture.url }}" class="profile-img">
+                                    {% else %}
+                                    <i class="bi bi-person text-secondary" style="font-size: 3rem;"></i>
+                                    {% endif %}
+                                </div>
+                                <label class="fw-bold text-primary" style="cursor: pointer;">
+                                    Change Profile Photo
+                                    <div class="d-none">{{ profile_form.profile_picture }}</div>
+                                </label>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label text-muted small fw-bold">Login Username</label>
+                                {{ user_form.username }}
+                                {% if user_form.username.errors %}<div class="text-danger small mt-1">{{
+                                    user_form.username.errors }}</div>{% endif %}
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label text-muted small fw-bold">First Name</label>
+                                {{ user_form.first_name }}
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label text-muted small fw-bold">Last Name</label>
+                                {{ user_form.last_name }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-muted small fw-bold">Email Address</label>
+                                {{ user_form.email }}
+                            </div>
+
+                            <hr class="my-4 text-muted w-100">
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label text-muted small fw-bold">Age</label>
+                                {{ profile_form.age }}
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label text-muted small fw-bold">Gender</label>
+                                {{ profile_form.gender }}
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label text-muted small fw-bold">Short Bio</label>
+                                {{ profile_form.bio }}
+                            </div>
+
+                            <div class="col-12 mb-4">
+                                <label class="form-label text-muted small fw-bold">About Me</label>
+                                {{ profile_form.about }}
+                            </div>
+
+                            <div class="col-12 mt-2">
+                                <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold py-2">Submit
+                                    Changes</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Adding Bootstrap form control classes dynamically using JS is easiest here without custom widget rendering -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const inputs = document.querySelectorAll('input:not([type="file"]), select, textarea');
+            inputs.forEach(input => {
+                input.classList.add('form-control');
+                input.classList.add('bg-light');
+                input.classList.add('border-0');
+            });
+            const fileInputs = document.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(input => {
+                input.classList.add('form-control');
+            });
+        });
+    </script>
+
+    {% if user_form.errors or profile_form.errors %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var myModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
+            myModal.show();
+        });
+    </script>
+    {% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

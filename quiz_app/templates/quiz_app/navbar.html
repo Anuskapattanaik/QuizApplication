@@ -1,0 +1,141 @@
+<!-- quiz_app/navbar.html -->
+<nav class="navbar navbar-dark px-4 mb-4">
+    <div class="container">
+        <a class="navbar-brand fw-bold fs-4 text-white" href="{% url 'home' %}">QuizApp</a>
+        <button class="navbar-toggler border-0 shadow-none text-white" type="button" data-bs-toggle="offcanvas"
+            data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon" style="filter: brightness(0) invert(1);"></span>
+        </button>
+        <div class="offcanvas offcanvas-end text-bg-dark" tabindex="-1" id="offcanvasNavbar"
+            aria-labelledby="offcanvasNavbarLabel">
+            <div class="offcanvas-header border-bottom border-secondary">
+                <h5 class="offcanvas-title fw-bold" id="offcanvasNavbarLabel">Menu</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"
+                    aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body">
+                <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item mb-3">
+                        <a class="nav-link fs-5 text-white" href="{% url 'home' %}">
+                            <i class="bi bi-house-door-fill me-3 text-primary"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item mb-3">
+                        <a class="nav-link fs-5 text-white" href="{% url 'leaderboard' %}">
+                            <i class="bi bi-trophy-fill me-3 text-warning"></i> Leaderboard
+                        </a>
+                    </li>
+                    <li class="nav-item mb-3">
+                        <a class="nav-link fs-5 text-white" href="{% url 'profile' %}">
+                            <i class="bi bi-person-fill me-3 text-info"></i> Profile
+                        </a>
+                    </li>
+                    <li class="nav-item mb-3">
+                        <a class="nav-link fs-5 text-white" href="#" id="theme-toggle" onclick="toggleTheme(event)">
+                            <i class="bi bi-moon-fill me-3 text-secondary" id="theme-icon"></i> <span
+                                id="theme-text">Dark Mode</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-3">
+                        <a class="nav-link fs-5 text-white" href="#">
+                            <i class="bi bi-people-fill me-3 text-success"></i> Friends
+                        </a>
+                    </li>
+                    <hr class="border-secondary my-4">
+                    <li class="nav-item">
+                        <form action="{% url 'logout' %}" method="POST" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit"
+                                class="nav-link fs-5 border-0 bg-transparent text-start w-100 text-danger p-0 pt-2">
+                                <i class="bi bi-box-arrow-right me-3"></i> Logout
+                            </button>
+                        </form>
+                    </li>
+                    {% else %}
+                    <li class="nav-item mb-3">
+                        <a class="nav-link fs-5 text-white" href="{% url 'login' %}">
+                            <i class="bi bi-box-arrow-in-right me-3 text-primary"></i> Login
+                        </a>
+                    </li>
+                    <li class="nav-item mb-3">
+                        <a class="nav-link fs-5 text-white" href="{% url 'register' %}">
+                            <i class="bi bi-person-plus-fill me-3 text-info"></i> Sign Up
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Global Theme Toggler Script -->
+<script>
+    // Immediately apply theme to avoid flickering on load
+    const savedTheme = localStorage.getItem('quizAppTheme') || 'light';
+    document.documentElement.setAttribute('data-bs-theme', savedTheme);
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const themeIcon = document.getElementById('theme-icon');
+        const themeText = document.getElementById('theme-text');
+
+        // Update UI based on saved theme
+        if (savedTheme === 'dark') {
+            if (themeIcon) {
+                themeIcon.classList.remove('bi-moon-fill');
+                themeIcon.classList.add('bi-sun-fill');
+                themeIcon.classList.replace('text-secondary', 'text-warning');
+            }
+            if (themeText) themeText.textContent = 'Light Mode';
+
+            // Remove light gradient and apply dark background
+            document.body.style.background = '';
+            document.body.classList.add('bg-dark', 'text-light');
+        } else {
+            // Ensure gradient is applied if light theme is active
+            document.body.classList.remove('bg-dark', 'text-light');
+
+            // Do not override profile.html's special soft layout
+            if (window.location.pathname !== '/profile/') {
+                document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            } else {
+                document.body.style.backgroundColor = '#fafafa';
+            }
+        }
+    });
+
+    function toggleTheme(event) {
+        event.preventDefault();
+
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+        document.documentElement.setAttribute('data-bs-theme', newTheme);
+        localStorage.setItem('quizAppTheme', newTheme);
+
+        // Update navbar button visually
+        const themeIcon = document.getElementById('theme-icon');
+        const themeText = document.getElementById('theme-text');
+
+        if (newTheme === 'dark') {
+            themeIcon.classList.remove('bi-moon-fill');
+            themeIcon.classList.add('bi-sun-fill');
+            themeIcon.classList.replace('text-secondary', 'text-warning');
+            themeText.textContent = 'Light Mode';
+
+            // Remove light gradient and apply dark background
+            document.body.style.background = '';
+            document.body.classList.add('bg-dark', 'text-light');
+        } else {
+            themeIcon.classList.remove('bi-sun-fill');
+            themeIcon.classList.add('bi-moon-fill');
+            themeIcon.classList.replace('text-warning', 'text-secondary');
+            themeText.textContent = 'Dark Mode';
+
+            // Restore beautiful light gradient
+            document.body.classList.remove('bg-dark', 'text-light');
+            document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        }
+    }
+</script>
